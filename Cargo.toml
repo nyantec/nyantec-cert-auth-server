@@ -6,7 +6,6 @@ edition = "2021"
 license = "MirOS"
 
 [dependencies]
-custom_error = "1.9"
 der-parser = "5.1"
 hyper = { version = "0.14", features = [ "server", "http1", "tcp" ] }
 serde = "1.0"
