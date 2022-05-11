@@ -1,7 +1,13 @@
-# X.509 Client Certificate Authentication
+# nyantec-cert-auth-server
 
-Configure our reverse proxy to forward requests to `/cert-auth/` to `http://127.0.0.1:8124/`, and add the
-X-SSL-Client-Dn header. With nginx your configuration might look like this:
+A web server for validating X.509 Client Certificates
+
+
+## X.509 Client Certificate Authentication
+
+Configure your reverse proxy to forward requests to `http://127.0.0.1:8124/cert-auth/`,
+and add the `X-SSL-Client-Dn` header. With nginx the configuration might look like
+the following:
 
 ```
 ...
@@ -21,6 +27,23 @@ X-SSL-Client-Dn header. With nginx your configuration might look like this:
             fastcgi_param REMOTE_USER $ssl_client_s_dn_cn;
         }
 ...
+```
+
+## Accepting only a subset of users with a valid client cert
+
+It is also possible to permit only a subset of users, despite having a valid client
+certificate. To use this feature, define a JSON file of the following structure
+
+```json
+{
+    "allowed_uids": ["user1", "user2", "user3"]
+}
+```
+where `user1` represents the UID of a user that should be allowed to access the service
+and pass the JSON file as the first command line argument to the `cert-auth` server.
+
+```
+$ cert-auth permissions.json
 ```
 
 ## Developing with nix-shell
