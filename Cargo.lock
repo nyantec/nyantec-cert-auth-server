@@ -543,6 +543,8 @@ dependencies = [
 [[package]]
 name = "nyantec-cert-auth"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3188ba861c7d212ca9e0a998cc4c091e42b86de62933a52e6652ae41853cd90"
 dependencies = [
  "der-parser",
  "hyper",
@@ -559,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "nyantec-cert-auth-server"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "der-parser",
  "hyper",
