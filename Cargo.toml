@@ -1,6 +1,6 @@
 [package]
 name = "nyantec-cert-auth-server"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["The cert-auth Authors <oss@nyantec.com>"]
 edition = "2021"
 description = "A web server for validating X.509 Client Certificates"

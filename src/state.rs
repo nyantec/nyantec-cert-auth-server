@@ -25,6 +25,9 @@ impl State {
 
 		Ok(Response::builder()
 			.status(StatusCode::OK)
+			.header("X-Remote-User", &claims.uid)
+			.header("X-Remote-Name", &claims.name)
+			.header("X-Remote-Email", &claims.email)
 			.body(Body::from("success"))?)
 	}
 
@@ -43,7 +46,13 @@ impl State {
 							CustomError::PermissionNotMatchedError => hyper::StatusCode::FORBIDDEN,
 							_ => hyper::StatusCode::INTERNAL_SERVER_ERROR,
 						})
-						.body(hyper::Body::from("error"))
+						.body(hyper::Body::from(format!(
+							"error: {}",
+							match e {
+								CustomError::PermissionNotMatchedError => "Permission denied",
+								_ => "Internal Server Error",
+							},
+						)))
 						.unwrap(), // error handling error
 				)
 			}
