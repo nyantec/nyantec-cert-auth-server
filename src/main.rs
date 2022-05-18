@@ -15,12 +15,13 @@
 //!     "allowed_uids": []
 //! }
 //! ```
-use std::sync::Arc;
-use std::{env, fs};
-
+use clap::{ArgEnum, Parser};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Request, Response, Server, StatusCode};
 use nyantec_cert_auth::{CustomError, Permissions};
+
+use std::sync::Arc;
+use std::{env, fs};
 
 use crate::state::State;
 
@@ -28,39 +29,41 @@ mod state;
 
 pub(crate) type Result<T> = std::result::Result<T, CustomError>;
 
-fn usage() {
-	println!(
-		"Usage: snipe-it-cert-auth [ <path/to/permissions.json> ]\
-        \
-        Starts a web server for validating X.509 Client Certificates.\
-        \
-        Optionally accepts a path to a permissions.json file as first command line argument.\
-        If such a file is provided, the cert-auth service will match a client certificate against\
-        the provided list of allowed uids or email addresses."
-	);
+/// Defines the supported variants of this Cert-Auth-Server
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, ArgEnum)]
+#[non_exhaustive]
+enum Variant {
+	/// Starts the server with specialisation for authenticating against a Gitlab instance.
+	Gitlab,
+
+	/// Starts the server with specialisation for authenticating against a Snipe-IT instance.
+	#[allow(non_camel_case_types)]
+	Snipe_IT,
+}
+
+#[derive(Debug, Parser)]
+#[clap(author, version, about, long_about = None)]
+struct ArgumentParser {
+	/// Select an application variant.
+	#[clap(arg_enum, short, long)]
+	variant: Option<Variant>,
+
+	/// Path to a permissions.json containing a list of allowed user ids
+	#[clap(short, long)]
+	permissions: Option<String>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
 	let mut permissions: Option<Permissions> = None;
 
-	// command line argument parsing
-	let args: Vec<String> = env::args().collect();
-	match args.len() {
-		1 => {
-			// Without a supplied permissions.json as command line argument,
-			// it will permit all requests providing a valid client certificate.
-		}
-		2 => {
-			// Parse permissions file
-			let path = args.get(1).expect("Unable parse the first CLI argument!");
-			let contents =
-				fs::read_to_string(path).expect(&format!("Unable to read {} into a String!", path));
-			permissions = Some(
-				serde_json::from_str(&contents).expect("JSON File is not of the expected format!"),
-			)
-		}
-		_ => usage(),
+	let clap = ArgumentParser::parse();
+
+	if let Some(path) = clap.permissions {
+		let contents =
+			fs::read_to_string(&path).expect(&format!("Unable to read {} into a String!", path));
+		permissions =
+			Some(serde_json::from_str(&contents).expect("JSON File is not of the expected format!"))
 	}
 
 	let port = env::var("PORT")
