@@ -1,8 +1,10 @@
-use hyper::Body;
+use std::env;
+
+use hyper::{header, Body};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use nyantec_cert_auth::{get_claims, is_allowed_by_uid, CustomError, Permissions};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use std::env;
 
 use crate::{snipe_it, Request, Response, SnipeItClient, StatusCode, Variant};
 
@@ -45,6 +47,24 @@ impl State {
 		}
 
 		match self.variant {
+			Some(Variant::Gitlab) => {
+				let jwt_secret = env::var("GITLAB_JWT_SECRET")
+					.expect("Missing GITLAB_JWT_SECRET environment variable!")
+					.to_string();
+				let token = encode(
+					&Header::default(),
+					&claims,
+					&EncodingKey::from_secret(jwt_secret.as_str().as_ref()),
+				)?;
+
+				Ok(Response::builder()
+					.status(StatusCode::TEMPORARY_REDIRECT)
+					.header(
+						header::LOCATION,
+						format!("/users/auth/jwt/callback?jwt={}", token),
+					)
+					.body(Body::from("success"))?)
+			}
 			Some(Variant::Snipe_IT) => {
 				let users = self.snipe_it_client.get_users().await?;
 				if !self.snipe_it_client.contains_username(&claims.uid, &users) {
@@ -72,7 +92,6 @@ impl State {
 					.header("X-Remote-User", claims.uid)
 					.body(Body::from("success"))?)
 			}
-			Some(Variant::Gitlab) => unimplemented!(),
 			_ => Ok(Response::builder()
 				.status(StatusCode::OK)
 				.header("X-Remote-User", &claims.uid)
