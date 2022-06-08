@@ -5,8 +5,9 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use nyantec_cert_auth::{get_claims, is_allowed_by_uid, CustomError, Permissions};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use serde_json::json;
 
-use crate::{snipe_it, Request, Response, SnipeItClient, StatusCode, Variant};
+use crate::{sftpgo, snipe_it, Request, Response, SnipeItClient, StatusCode, Variant};
 
 pub struct State {
 	permissions: Option<Permissions>,
@@ -64,6 +65,17 @@ impl State {
 						format!("/users/auth/jwt/callback?jwt={}", token),
 					)
 					.body(Body::from("success"))?)
+			}
+			Some(Variant::SFTPGo) => {
+				let user = json!(sftpgo::SFTPGoUser {
+					username: claims.uid.clone(),
+					email: claims.email.clone(),
+					password: "".to_string(),
+				});
+
+				Ok(Response::builder()
+					.status(StatusCode::OK)
+					.body(Body::from(user.to_string()))?)
 			}
 			Some(Variant::Snipe_IT) => {
 				let users = self.snipe_it_client.get_users().await?;

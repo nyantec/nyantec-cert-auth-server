@@ -39,6 +39,7 @@ use nyantec_cert_auth::{CustomError, Permissions};
 use crate::snipe_it::SnipeItClient;
 use crate::state::State;
 
+mod sftpgo;
 mod snipe_it;
 mod state;
 
@@ -55,6 +56,9 @@ pub(crate) const SNIPE_IT_API_TOKEN: &'static str = "SNIPE_IT_API_TOKEN";
 enum Variant {
 	/// Starts the server with specialisation for authenticating against a Gitlab instance.
 	Gitlab,
+
+	///  Starts the server with specialisation for authenticating aginst a SFTPGo instance.
+	SFTPGo,
 
 	/// Starts the server with specialisation for authenticating against a Snipe-IT instance.
 	#[allow(non_camel_case_types)]
