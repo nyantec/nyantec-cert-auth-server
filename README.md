@@ -46,14 +46,20 @@ and pass the JSON file as the first command line argument to the `cert-auth` ser
 $ cert-auth permissions.json
 ```
 
-## Developing with nix-shell
+## Developing with Nix
+Nix provides a way to start an interactive shell with all needed dependencies to hack on this project.
+
+### nix-shell
 
 `nix-shell` is a tool to start an interactive shell based on a Nix expression.
-The provided `shell.nix` contains code to start an interactive shell with thei
+The provided `shell.nix` contains code to start an interactive shell with the
 necessary dependencies to build this project.
 
 To spawn the shell, simply invoke `nix-shell` from this directory.
 
+### flakes
+
+For flake users, simply invoke `nix develop`
 
 ## License
 ```
