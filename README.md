@@ -1,35 +1,56 @@
 # nyantec-cert-auth-server
 
-A web server for validating X.509 Client Certificates
+This crate provides a web server for validating X.509 Client Certificates
 
+# X.509 Client Certificate Authentication with nginx
 
-## X.509 Client Certificate Authentication
+Configure your reverse proxy to forward requests to `http://127.0.0.1:8124/cert-auth/`
+and add the `X-SSL-Client-Dn` header.
 
-Configure your reverse proxy to forward requests to `http://127.0.0.1:8124/cert-auth/`,
-and add the `X-SSL-Client-Dn` header. With nginx the configuration might look like
-the following:
+Example configuration:
+```nginx
+server {
+    # ...
 
+    ssl_client_certificate CA.pem;
+    ssl_verify_client on;
+    ssl_verify_depth 1;
+
+    location /cert-auth/ {
+        proxy_pass http://127.0.0.1:8124/;
+        proxy_set_header X-SSL-Client-Dn $ssl_client_s_dn;
+        proxy_set_header X-SSL-Verify $ssl_client_verify;
+        proxy_set_header X-SSL-Client-Escaped-Cert $ssl_client_escaped_cert;
+    }
+
+    location ~ \.php$ {
+        auth_request /cert-auth/;
+        fastcgi_param REMOTE_USER $ssl_client_s_dn_cn;
+    }
+
+   # ...
+}
 ```
-...
-        ssl_client_certificate CA.pem;
-        ssl_verify_client on;
-        ssl_verify_depth 1;
 
-        location /cert-auth/ {
-            proxy_pass http://127.0.0.1:8124/;
-            proxy_set_header X-SSL-Client-Dn $ssl_client_s_dn;
-            proxy_set_header X-SSL-Verify $ssl_client_verify;
-            proxy_set_header X-SSL-Client-Escaped-Cert $ssl_client_escaped_cert;
-        }
+Note: The [`ngx_http_auth_request_module`] is not built by
+default and you might need to recompile nginx with the `--with-http_auth_request_module`
+configuration parameter.
 
-        location ~ \.php$ {
-            auth_request /cert-auth/;
-            fastcgi_param REMOTE_USER $ssl_client_s_dn_cn;
-        }
-...
-```
+## Using this crate with GitLab
+This crate can be used to sign in users via GitLab's [JWT OmniAuth provider].
 
-## Accepting only a subset of users with a valid client cert
+Invoke the application with the `--variant gitlab` argument and pass the JWT secret as
+`GITLAB_JWT_SECRET` environment variable.
+
+## Using this crate with Snipe-IT
+[Snipe-IT] supports authentication via the REMOTE_USER header. However, a user must exist in
+Snipe-IT first before being able to log in. As a step in between, this crate creates a new
+user over the REST API if no such user exists in the database yet.
+
+For that, invoke the application with the `--variant snipe-it` argument and pass the API URL and
+token as `SNIPE_IT_API_URL` and `SNIPE_IT_API_TOKEN` environment variable.
+
+## Accepting only a subset of users with a valid client certificate
 
 It is also possible to permit only a subset of users, despite having a valid client
 certificate. To use this feature, define a JSON file of the following structure
@@ -39,21 +60,31 @@ certificate. To use this feature, define a JSON file of the following structure
     "allowed_uids": ["user1", "user2", "user3"]
 }
 ```
-where `user1` represents the UID of a user that should be allowed to access the service
-and pass the JSON file as the first command line argument to the `cert-auth` server.
+and pass the file as command line argument to `cert-auth`:
 
-```
-$ cert-auth permissions.json
+```shell
+$ cert-auth --permissions permissions.json
 ```
 
-## Developing with nix-shell
+[`ngx_http_auth_request_module`]: https://nginx.org/en/docs/http/ngx_http_auth_request_module.html
+[JWT OmniAuth provider]: https://docs.gitlab.com/ee/administration/auth/jwt.html
+[Snipe-IT]: https://snipeitapp.com
+
+
+## Developing with Nix
+Nix provides a way to start an interactive shell with all needed dependencies to hack on this project.
+
+### nix-shell
 
 `nix-shell` is a tool to start an interactive shell based on a Nix expression.
-The provided `shell.nix` contains code to start an interactive shell with thei
+The provided `shell.nix` contains code to start an interactive shell with the
 necessary dependencies to build this project.
 
 To spawn the shell, simply invoke `nix-shell` from this directory.
 
+### flakes
+
+For flake users, simply invoke `nix develop`
 
 ## License
 ```
