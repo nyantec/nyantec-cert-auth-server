@@ -2,10 +2,10 @@ use std::env;
 
 use hyper::{header, Body};
 use jsonwebtoken::{encode, EncodingKey, Header};
-use nyantec_cert_auth::{get_claims, is_allowed_by_uid, CustomError, Permissions};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 
+use crate::nyantec_cert_auth::{get_claims, is_allowed_by_uid, CustomError, Permissions};
 use crate::{snipe_it, Request, Response, SnipeItClient, StatusCode, Variant};
 
 pub struct State {
@@ -35,10 +35,7 @@ impl State {
 		}
 	}
 
-	/// Retrieves the username and other relevant values from the client certificate
-	/// and checks whether a matching user exists in the Snipe-IT database.
-	///
-	/// If such a user does not yet exist, it creates a new user via the Snipe-IT REST API.
+	/// Processes an authentication request for the selected application variant
 	async fn process_request(&self, req: Request<Body>) -> crate::Result<Response<Body>> {
 		let claims = get_claims(req)?;
 
